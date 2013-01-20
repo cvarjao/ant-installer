@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="imageMagick" basedir=".">
+	<dirname property="ant.imageMagick.dir" file="${ant.file.imageMagick}"/>
+	<property file="${ant.imageMagick.dir}/imageMagick.properties"/>
+	
+	<import file="innounp.xml"/>
+	
+	<target name="check-download-imageMagick" unless="offline">
+		<property name="imageMagick.archive.filename" value="imageMagick-${imageMagick.version}.exe"/>
+		<property name="imageMagick.download.file" value="${download.dir}/${imageMagick.archive.filename}"/>
+		<condition property="download.imageMagick.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${imageMagick.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-imageMagick" depends="check-download-imageMagick" if="download.imageMagick.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${imageMagick.archive.url}" dest="${imageMagick.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-imageMagick">
+		<property name="imageMagick.install.dir" value="${install.dir}/imageMagick"/>
+		<property name="imageMagick.home" value="${imageMagick.install.dir}/imageMagick-${imageMagick.version}"/>
+		<property name="imageMagick.bin" value="${imageMagick.home}/convert.exe"/>
+		
+		<condition property="imageMagick.installed">
+			<available file="${imageMagick.home}"/>
+		</condition>
+	</target>
+	
+	<target name="install-imageMagick" depends="install-innounp,download-imageMagick,check-install-imageMagick" unless="imageMagick.installed">
+		<delete dir="${imageMagick.home}_tmp"/>
+		<mkdir dir="${imageMagick.home}_tmp"/>
+		<echo>imageMagick.home:${imageMagick.home}</echo>
+		<echo>imageMagick.bin:${imageMagick.bin}</echo>
+		<echo>innounp.bin:${innounp.bin} x -y ${imageMagick.download.file}</echo>
+		<exec executable="${innounp.bin}" dir="${imageMagick.home}_tmp">
+		    <arg value="-x"/>
+		    <arg value="-y"/>
+		    <arg value="-q"/>
+			<arg value="${imageMagick.download.file}"/>
+		</exec>
+		<move file="${imageMagick.home}_tmp/{app}" tofile="${imageMagick.home}"/>
+		<delete dir="${imageMagick.home}_tmp"/>
+	</target>
+</project>

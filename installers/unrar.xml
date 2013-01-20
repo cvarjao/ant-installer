@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="unrar" basedir=".">
+	<dirname property="ant.unrar.dir" file="${ant.file.unrar}"/>
+	<property file="${ant.unrar.dir}/unrar.properties"/>
+	
+	<target name="check-download-unrar" unless="offline">
+		<property name="unrar.archive.filename" value="unrar-${unrar.version}.exe"/>
+		<property name="unrar.download.file" value="${download.dir}/${unrar.archive.filename}"/>
+		<condition property="download.unrar.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${unrar.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-unrar" depends="check-download-unrar" if="download.unrar.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${unrar.archive.url}" dest="${unrar.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-unrar">
+		<property name="unrar.install.dir" value="${install.dir}/unrar"/>
+		<property name="unrar.home" value="${unrar.install.dir}/unrar-${unrar.version}"/>
+		<property name="unrar.bin" value="${unrar.home}/UnRAR.exe"/>
+		
+		<condition property="unrar.installed">
+			<available file="${unrar.home}"/>
+		</condition>	
+	</target>
+	
+	<target name="install-unrar" depends="download-unrar,check-install-unrar" unless="unrar.installed">
+		<mkdir dir="${unrar.install.dir}"/>
+		<exec executable="${unrar.download.file}" dir="${unrar.install.dir}" output="${unrar.install.dir}/unrar-${unrar.version}.log" >
+		    <arg value="-s"/>
+			<arg value="-d${unrar.install.dir}/unrar-${unrar.version}"/>
+		</exec>
+	</target>
+</project>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-mri" basedir=".">
+	<import file="../7zip.xml"/>
+	<import file="_common.xml"/>
+	
+	<property name="ruby.default.impl" value="cruby"/>
+	<property name="ruby.default.impl.cruby" value="true"/>
+		
+	<target name="check-download-cruby" unless="offline">
+	    <pathconvert property="cruby.download.file" targetos="windows">
+	      <path location="${download.dir}/cruby-${cruby.version}.7z"/>
+	    </pathconvert>
+		<echo>cruby.download.file:${cruby.download.file}</echo>
+		<condition property="download.cruby.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${cruby.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-cruby" depends="check-download-cruby" if="download.cruby.ok">
+        <mkdir dir="${download.dir}"/>
+		<dproperty property="cruby.archive.url" prefix="cruby.dist." version="${cruby.version}"/>
+		<echo>cruby.archive.url:${cruby.archive.url}</echo>
+        <get src="${cruby.archive.url}" dest="${cruby.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-cruby">
+	    <pathconvert property="cruby.install.dir" targetos="windows">
+	      <path location="${install.dir}/cruby"/>
+	    </pathconvert>
+		<echo>ruby.install.dir:${cruby.install.dir}</echo>
+		<condition property="cruby.installed">
+			<available file="${cruby.install.dir}/cruby-${cruby.version}"/>
+		</condition>	
+	</target>
+	
+	
+	<target name="install-ruby-core-gems" depends="set-ruby.home">
+		<echo>install-ruby-core-gems ...</echo>
+	</target>
+	
+	<target name="install-ruby" depends="_install-cruby" unless="cruby.installed">
+	</target>
+	
+	<target name="_install-cruby" depends="install-7zip,download-cruby,check-install-cruby" unless="cruby.installed">
+		<local name="temp.cruby.home"/>
+		<echo>cruby.install.dir:${cruby.install.dir}</echo>
+		<mkdir dir="${cruby.install.dir}"/>
+		<echo>Extracting '${cruby.download.file}' ...</echo>
+		<exec executable="${7zip.install.dir}/7za.exe" dir="${cruby.install.dir}" output="${cruby.install.dir}/cruby-${cruby.version}.log" >
+		    <arg value="x"/>
+			<arg value="${cruby.download.file}"/>
+			<arg value="-y"/>
+			<arg value="-r"/>
+		</exec>
+	    <pathconvert property="temp.cruby.home" targetos="windows">
+	      <dirset dir="${cruby.install.dir}" includes="ruby-${cruby.version}*"/>
+	    </pathconvert>
+		<echo>Moving folder '${temp.cruby.home}' to '${cruby.install.dir}/cruby-${cruby.version}' </echo>
+		<move file="${temp.cruby.home}" tofile="${cruby.install.dir}/cruby-${cruby.version}"/>
+	</target>
+	
+	<target name="pick_ruby_impl">
+		<fail unless="ruby.default.impl" message="No ruby implementation selected"/>
+		
+		<echo>ruby.default.impl:${ruby.default.impl}</echo>
+		<echo>ruby.default.impl.cruby:${ruby.default.impl.cruby}</echo>
+	</target>
+		
+	<target name="set-ruby.home" depends="pick_ruby_impl,set-cruby.home">
+	    <pathconvert property="ruby.user.home" targetos="windows">
+	    	<path location="${install.dir}/home"/>
+	    </pathconvert>
+		
+		<echo>ruby.home:${ruby.home}</echo>
+		<echo>ruby.user.home:${ruby.user.home}</echo>
+		<echo>ruby.bin.ruby:${ruby.bin.ruby}</echo>
+		
+	</target>
+	
+	<target name="set-devkit.home">
+	    <pathconvert property="devkit.home" targetos="windows">
+	    	<path location="${install.dir}/devkit/devkit-${devkit.version}"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="set-cruby.home" if="ruby.default.impl.cruby">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/cruby/cruby-${cruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/ruby.exe"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="_set-cruby.home">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/cruby/cruby-${cruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/ruby.exe"/>
+	    </pathconvert>
+	</target>
+		
+	<target name="ruby_gem_list" depends="set-ruby.home">
+		<ruby dir="${ruby.home}">
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="list"/>
+		</ruby>
+	</target>
+	
+	<target name="ruby_gem_env" depends="set-ruby.home">
+		<ruby dir="${ruby.home}">
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="env"/>
+		</ruby>
+	</target>
+	
+	<target name="check" depends="_set-cruby.home,set-devkit.home">
+		<ruby>
+			<arg value="-v"/>
+		</ruby>
+	</target>
+	
+</project>

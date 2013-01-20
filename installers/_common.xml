@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="_common" basedir=".">
+	<property name="eol" value="${line.separator}"/>
+
+	<macrodef name="dproperty">
+		<attribute name="prefix" default=""/>
+		<attribute name="sufix" default=""/>
+		<attribute name="property" default=""/>
+		<attribute name="version" default=""/>
+		<sequential>
+			<property name="@{property}" value="${@{prefix}@{version}@{sufix}}" />
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="dpropertyname">
+		<attribute name="prefix" default=""/>
+		<attribute name="sufix" default=""/>
+		<attribute name="property" default=""/>
+		<attribute name="value" default=""/>
+		<sequential>
+			<property name="@{prefix}@{property}@{sufix}" value="@{value}" />
+		</sequential>
+	</macrodef>
+</project>

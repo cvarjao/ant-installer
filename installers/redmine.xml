@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="redmine" basedir=".">
+	<dirname property="ant.redmine.dir" file="${ant.file.redmine}"/>
+	<property file="${ant.redmine.dir}/redmine.properties"/>
+	
+	<import file="ruby/_common.xml"/>
+	<import file="ruby/gems/bundler.xml"/>
+	<import file="ruby/gems/rmagick.xml"/>
+	<import file="mysql/_common-targets.xml"/>
+	
+	<target name="check-download-redmine" unless="offline">
+		<property name="redmine.download.file" value="${download.dir}/redmine-${redmine.version}.zip"/>
+		<condition property="download.redmine.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${redmine.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+		
+	<target name="download-redmine" depends="check-download-redmine" if="download.redmine.ok">
+        <mkdir dir="${download.dir}"/>
+		<dproperty property="redmine.archive.url" prefix="redmine.archive." sufix=".url" version="${redmine.version}"/>
+        <get src="${redmine.archive.url}" dest="${redmine.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="set-redmine.home">
+	    <pathconvert property="redmine.home" targetos="windows">
+	    	<path location="${install.dir}/redmine/redmine-${redmine.version}"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="check-extract-redmine">
+	    <pathconvert property="redmine.install.dir" targetos="windows">
+	      <path location="${install.dir}/redmine"/>
+	    </pathconvert>
+		<echo>redmine.install.dir:${redmine.install.dir}</echo>
+		<condition property="redmine.installed">
+			<available file="${redmine.install.dir}/redmine-${redmine.version}"/>
+		</condition>	
+	</target>
+	
+	<target name="extract-redmine" depends="download-redmine,check-extract-redmine" unless="redmine.installed">
+		<mkdir dir="${redmine.install.dir}"/>
+		<unzip src="${redmine.download.file}" dest="${redmine.install.dir}" />
+	</target>
+	
+	<target name="install-redmine-db" depends="set-mysql.home,set-ruby.home,set-redmine.home">
+		<echo>CREATE DATABASE</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="create database redmine character set utf8;">
+			<arg line="-u root"/>
+		</exec>
+		<echo>CREATE USER</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="create user 'redmine'@'localhost' identified by 'redmine123';">
+			<arg line="-u root"/>
+		</exec>
+		<echo>GRANT PRIVILEGES</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="grant all privileges on redmine.* to 'redmine'@'localhost';">
+			<arg line="-u root"/>
+		</exec>
+		
+		<echo>rake db:migrate</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="RAILS_ENV" value="production"/>
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg value="db:migrate"/>
+		</exec>
+		
+		<echo>rake redmine:load_default_data</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="RAILS_ENV" value="production"/>
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg value="--trace"/>
+			<arg value="redmine:load_default_data"/>
+		</exec>
+	</target>
+	
+	<target name="remove-redmine-db" depends="set-mysql.home">
+		<echo>DROP SCHEMA:</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="DROP SCHEMA IF EXISTS redmine;">
+			<arg line="-u root"/>
+		</exec>
+		
+		<echo>DROP USER:</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="DROP USER 'redmine'@'localhost';">
+			<arg line="-u root"/>
+		</exec>
+	</target>
+	
+	<target name="install-redmine-extra-gems" depends="set-ruby.home,set-redmine.home">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg line="install activerecord-mysql-adapter --install-dir vendor/bundle --no-rdoc"/>
+		</exec>
+	</target>
+	
+	<target name="run-redmine" depends="set-ruby.home,set-redmine.home">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="script/rails"/>
+			<arg line="server webrick -e production"/>
+		</exec>
+	</target>
+	
+	<target name="redmine_gem_list" depends="set-ruby.home,set-redmine.home">
+		<echo>gem env</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="env"/>
+		</exec>
+		<echo>gem list</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="list"/>
+		</exec>
+		<!--
+		<echo>bundle check</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="check"/>
+		</exec>
+		-->
+		<echo>bundle list</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="list"/>
+		</exec>
+		<echo>bundle show</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="show"/>
+		</exec>		
+		<echo>bundle platform</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="platform"/>
+		</exec>
+	</target>
+		
+	<target name="redmine_war" depends="install-redmine">
+		<!--
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}/bin">
+			<arg value="${ruby.home}/bin/gem"/>
+		    <arg value="install"/>
+			<arg line="jruby-openssl activerecord-jdbcmysql-adapter jdbc-postgres jdbc-mysql"/>
+		</exec>
+		-->
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="config"/>
+			<arg value="FORCE=1"/>
+		</exec>
+		<copy file="${redmine.home}/config/warble.rb" tofile="${redmine.home}/config/warble.rb.original"/>
+		
+		<echo level="error" file="${redmine.home}/config/warble.rb">Warbler::Config.new do |config|${eol}</echo>
+		<!-- <echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.features = %w(compiled)${eol}</echo>-->
+		<!--<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.features = %w(executable compiled)${eol}</echo>-->
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.dirs = %w(app config lib log vendor tmp exta files)${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;,&quot;activerecord-jdbcpostgresql-adapter&quot;,&quot;activerecord-jdbcsqllite3-adapter&quot;, &quot;jruby-openssl&quot;, &quot;i18n&quot;, &quot;rack&quot;, &quot;jdbc-postgres&quot;, &quot;jdbc-sqllite3&quot;]${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.webserver = 'jetty'${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.jar_name = 'redmine##${redmine.version}'${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.webxml.jruby.compat.version = "1.9"${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">end${eol}</echo>
+		<echo>warble war:clean</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}" output="${redmine.home}/war_debug.log">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war:clean"/>
+		</exec>
+		
+		<!--
+		<replace file="${redmine.home}/config/warble.rb" summary="true">
+			<replacefilter token="# config.features = %w(gemjar)" value="config.features = %w(gemjar compiled)"/>
+			<replacefilter token="config.dirs = %w(app config lib log vendor tmp)" value="config.dirs = %w(app config lib log vendor tmp exta files)"/>
+			<replacefilter token="# config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;, &quot;jruby-openssl&quot;]" value="config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;, &quot;jruby-openssl&quot;, &quot;i18n&quot;, &quot;rack&quot;, &quot;jdbc-postgres&quot;]"/>
+		</replace>
+		-->
+		<!--
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}" output="${redmine.home}/war_debug.log">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war:debug"/>
+		</exec>
+		-->
+		<echo>warble war</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war"/>
+		</exec>
+		<mkdir dir="${dist.dir}"/>
+		<delete file="${dist.dir}/redmine##${redmine.version}.war"/>
+		<copy file="${redmine.home}/redmine##${redmine.version}.war" todir="${dist.dir}"/>
+	</target>
+	
+	<target name="install-redmine-bundle-install" depends="set-redmine.home,set-ruby.home, _install-redmine-bundle-install">
+		
+	</target>
+	<target name="install-redmine-bundle-update" depends="set-redmine.home,set-ruby.home">
+		<ruby dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="update"/>
+		</ruby>
+	</target>
+	
+	<target name="_install-redmine-bundle-install" depends="gem_install_rmagick">
+		<ruby dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg line="install --system --without development test"/>
+		</ruby>
+	</target>
+	
+	<target name="_install_redmine_core_gems" depends="gem_install_rmagick,gem_install_bundler">
+		<gemInstall name="rails"/>
+	</target>
+	
+	<target name="install-redmine" depends="install-ruby,extract-redmine,set-redmine.home,set-ruby.home,_install_redmine_core_gems,_install-redmine-bundle-install">
+		<echo>ruby.home:'${ruby.home}'</echo>
+		<echo>ruby.bin.ruby:'${ruby.bin.ruby}'</echo>
+		<echo>redmine.home:'${redmine.home}'</echo>
+		<echo>redmine.install.dir:'${redmine.install.dir}'</echo>
+		
+		
+		<echo level="error" file="${redmine.home}/config/database.yml">production:${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  adapter: mysql2${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  database: redmine${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  host: localhost${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  username: redmine${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  password: redmine123${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  encoding: utf8${eol}</echo>
+		
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg line="generate_secret_token"/>
+		</exec>
+		
+	</target>
+	
+	<target name="redmine_gem_install_all" depends="set-ruby.home">
+		<geminstall name="actionmailer" version="3.2.11"/>
+		<geminstall name="actionpack" version="3.2.11"/>
+		<geminstall name="activemodel" version="3.2.11"/>
+		<geminstall name="activerecord" version="3.2.11"/>
+		<geminstall name="activeresource" version="3.2.11"/>
+		<geminstall name="activesupport" version="3.2.11"/>
+		<geminstall name="ansi" version="1.4.3"/>
+		<geminstall name="arel" version="3.0.2"/>
+		<geminstall name="aws-sdk" version="1.6.9"/>
+		<geminstall name="bcrypt-ruby" version="3.0.1" native="x86-mingw32"/>
+		<geminstall name="bigdecimal" version="1.1.0"/>
+		<geminstall name="bluecloth" version="2.1.0" native="x86-mingw32"/>
+		<geminstall name="builder" version="3.0.0"/>
+		<geminstall name="bundler" version="1.2.3"/>
+		<geminstall name="bundler" version="1.0.21"/>
+		<geminstall name="coderay" version="1.0.8"/>
+		<geminstall name="coderay" version="1.0.6"/>
+		<geminstall name="coffee-rails" version="3.2.2"/>
+		<geminstall name="coffee-script" version="2.2.0"/>
+		<geminstall name="coffee-script-source" version="1.3.3"/>
+		<geminstall name="crack" version="0.3.1"/>
+		<geminstall name="daemons" version="1.1.9"/>
+		<geminstall name="daemons" version="1.1.8"/>
+		<geminstall name="diff-lcs" version="1.1.3"/>
+		<geminstall name="erubis" version="2.7.0"/>
+		<geminstall name="eventmachine" version="1.0.0" native="x86-mingw32"/>
+		<geminstall name="execjs" version="1.4.0"/>
+		<geminstall name="fastercsv" version="1.5.4"/>
+		<geminstall name="hike" version="1.2.1"/>
+		<geminstall name="hoe" version="3.0.6"/>
+		<geminstall name="hpricot" version="0.8.5"/>
+		<geminstall name="httparty" version="0.8.3"/>
+		<geminstall name="i18n" version="0.6.1"/>
+		<geminstall name="i18n" version="0.6.0"/>
+		<geminstall name="io-console" version="0.3"/>
+		<geminstall name="journey" version="1.0.4"/>
+		<geminstall name="jquery-rails" version="2.1.3"/>
+		<geminstall name="jquery-rails" version="2.0.3"/>
+		<geminstall name="json" version="1.7.6"/>
+		<geminstall name="json" version="1.7.5"/>
+		<geminstall name="json" version="1.5.4"/>
+		<geminstall name="mail" version="2.4.4"/>
+		<geminstall name="metaclass" version="0.0.1"/>
+		<geminstall name="mime-types" version="1.19"/>
+		<geminstall name="mime-types" version="1.18"/>
+		<geminstall name="mini_magick" version="3.4"/>
+		<geminstall name="mini_portile" version="0.3.0"/>
+		<geminstall name="minitest" version="2.5.1"/>
+		<geminstall name="mocha" version="0.12.3"/>
+		<geminstall name="multi_json" version="1.5.0"/>
+		<geminstall name="multi_json" version="1.3.6"/>
+		<geminstall name="multi_xml" version="0.5.1"/>
+		<geminstall name="mustache" version="0.99.4"/>
+		<geminstall name="mysql2" version="0.3.11" native="x86-mingw32"/>
+		<geminstall name="mysql2" version="0.2.18"/>
+		<geminstall name="net-ldap" version="0.3.1"/>
+		<geminstall name="nokogiri" version="1.5.5" native="x86-mingw32"/>
+		<geminstall name="nokogiri" version="1.4.7" native="x86-mingw32"/>
+		<geminstall name="polyglot" version="0.3.3"/>
+		<geminstall name="prototype-rails" version="3.2.1"/>
+		<geminstall name="rack" version="1.4.4"/>
+		<geminstall name="rack" version="1.4.1"/>
+		<geminstall name="rack-cache" version="1.2"/>
+		<geminstall name="rack-mount" version="0.8.3"/>
+		<geminstall name="rack-openid" version="1.3.1"/>
+		<geminstall name="rack-ssl" version="1.3.2"/>
+		<geminstall name="rack-test" version="0.6.2"/>
+		<geminstall name="rack-test" version="0.6.1"/>
+		<geminstall name="rails" version="3.2.11"/>
+		<geminstall name="railties" version="3.2.11"/>
+		<geminstall name="rake" version="10.0.3"/>
+		<geminstall name="rake" version="0.9.2.2"/>
+		<geminstall name="rake-compiler" version="0.8.1"/>
+		<geminstall name="rdiscount" version="1.6.8"/>
+		<geminstall name="rdoc" version="3.12"/>
+		<geminstall name="rdoc" version="3.9.4"/>
+		<geminstall name="RedCloth" version="4.2.9" native="x86-mingw32"/>
+		<geminstall name="rmagick" version="2.13.1"/>
+		<geminstall name="ronn" version="0.7.3"/>
+		<geminstall name="rspec" version="2.11.0"/>
+		<geminstall name="rspec-core" version="2.11.1"/>
+		<geminstall name="rspec-expectations" version="2.11.2"/>
+		<geminstall name="rspec-mocks" version="2.11.1"/>
+		<geminstall name="ruby-openid" version="2.1.8"/>
+		<geminstall name="rubygems-update" version="1.8.24"/>
+		<geminstall name="rvm" version="1.11.3.5"/>
+		<geminstall name="sass" version="3.1.20"/>
+		<geminstall name="sass-rails" version="3.2.5"/>
+		<geminstall name="sprockets" version="2.4.5"/>
+		<geminstall name="sprockets" version="2.2.2"/>
+		<geminstall name="sprockets" version="2.2.1"/>
+		<geminstall name="sprockets" version="2.1.3"/>
+		<geminstall name="sprockets" version="2.1.2"/>
+		<geminstall name="sqlite3" version="1.3.7" native="x86-mingw32"/>
+		<geminstall name="sqlite3" version="1.3.6" native="x86-mingw32"/>
+		<geminstall name="sqlite3-ruby" version="1.3.2" native="x86-mingw32"/>
+		<geminstall name="subexec" version="0.2.2"/>
+		<geminstall name="test-unit" version="2.5.2"/>
+		<geminstall name="thin" version="1.5.0"/>
+		<geminstall name="thin" version="1.3.1"/>
+		<geminstall name="thor" version="0.16.0"/>
+		<geminstall name="thor" version="0.15.4"/>
+		<geminstall name="thor" version="0.14.6"/>
+		<geminstall name="tilt" version="1.3.3"/>
+		<geminstall name="treetop" version="1.4.12"/>
+		<geminstall name="treetop" version="1.4.10"/>
+		<geminstall name="turn" version="0.9.6"/>
+		<geminstall name="tzinfo" version="0.3.35"/>
+		<geminstall name="tzinfo" version="0.3.33"/>
+		<geminstall name="uglifier" version="1.2.6"/>
+		<geminstall name="uuidtools" version="2.1.3"/>
+		<geminstall name="yard" version="0.8.1"/>
+	</target>
+</project>

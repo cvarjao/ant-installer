@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-gems-bundler" basedir=".">
+	<import file="../_common.xml"/>
+	
+	<target name="gem_check_bundler" depends="set-ruby.home">
+		<checkRubyGem name="bundler"/>
+	</target>
+	
+	<target name="gem_install_bundler" depends="set-ruby.home,gem_check_bundler" unless="ruby.gem.bundler.installed">
+	    <pathconvert property="imageMagick.home.unix" targetos="unix">
+	    	<path location="${imageMagick.home}"/>
+	    </pathconvert>
+	    	
+		<echo>imagemagick.home:${imageMagick.home}</echo>
+		<echo>imagemagick.home.unix:${imageMagick.home.unix}</echo>
+		
+		<gem dir="${ruby.home}">
+			<arg value="install"/>
+			<arg value="bundler"/>
+		</gem>
+		
+	</target>
+</project>

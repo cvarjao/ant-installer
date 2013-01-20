@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-common-targets" basedir=".">
+	<target name="set-ruby.home" unless="ruby.home" >
+		<fail message="This target must be implemented"/>
+	</target>
+	<target name="install-ruby">
+		<fail message="This target must be implemented"/>
+	</target>
+</project>

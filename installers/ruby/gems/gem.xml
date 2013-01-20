@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-gems" basedir=".">
+	<import file="../_common.xml"/>
+	
+	<target name="gem_check">
+		<checkRubyGem name="${gem.name}"/>
+	</target>
+	
+	<target name="gem_install" depends="gem_check" unless="ruby.gem.${gem.name}.installed">
+		<gem dir="${ruby.home}">
+			<arg value="install"/>
+			<arg value="${gem.name}"/>
+		</gem>
+	</target>
+</project>

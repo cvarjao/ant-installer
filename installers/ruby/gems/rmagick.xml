@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-gems-rmagick" basedir=".">
+	<import file="../_common.xml"/>
+	<import file="../../imageMagick.xml"/>
+	
+	<target name="gem_check_rmagick" depends="set-ruby.home">
+		<checkRubyGem name="rmagick"/>
+	</target>
+	
+	<target name="gem_install_rmagick" depends="install-imageMagick,set-ruby.home,gem_check_rmagick" unless="ruby.gem.rmagick.installed">
+		
+	    <pathconvert property="imageMagick.home.unix" targetos="unix">
+	    	<path location="${imageMagick.home}"/>
+	    </pathconvert>
+	    	
+		<echo>imagemagick.home:${imageMagick.home}</echo>
+		<echo>imagemagick.home.unix:${imageMagick.home.unix}</echo>
+		
+		<gem dir="${ruby.home}">
+			<env key="PATH" path="${imageMagick.home};${ruby.home}\\bin;${env.PATH}"/>
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="install"/>
+			<arg value="rmagick"/>
+			<arg value="--platform=ruby"/>
+			<arg value="--"/>
+			<arg value="--with-opt-lib=${imageMagick.home.unix}/lib"/>
+			<arg value="--with-opt-include=${imageMagick.home.unix}/include"/>
+		</gem>
+		
+	</target>
+</project>

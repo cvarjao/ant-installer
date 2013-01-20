@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="my-installer" basedir=".">
+	<property file="build.properties"/>
+	<property environment="env"/>
+	
+	<import file="installers/_common.xml"/>
+	<import file="installers/ruby/mri.xml"/>
+	<import file="installers/ruby/devkit.xml"/>
+	<import file="installers/ruby/gems/rmagick.xml"/>
+	<import file="installers/redmine.xml"/>
+	<import file="installers/innounp.xml"/>
+</project>

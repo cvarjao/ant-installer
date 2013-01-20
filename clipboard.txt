@@ -1,0 +1,47 @@
+		<!--
+		  <exec executable="cmd">
+		  	<env key="RUBY_HOME" path="${ruby.home}"/>
+		  	<env key="IMAGICK_HOME" path="${imagemagick.home}"/>
+		  	<env key="IMAGICK_HOME_X" path="${imagemagick.home.unix}"/>
+		    <arg value="/c"/>
+		  	<arg value="rmagick-install.cmd"/>
+		  </exec>
+		-->
+		
+		<exec executable="cmd" dir="${ruby.home}">
+			<env key="PATH" path="${imagemagick.home};${ruby.home}\\bin;${env.PATH}"/>
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="/c"/>
+			<arg value="${ruby.bin.ruby}"/>
+			<arg value="${ruby.home}\\bin\\gem"/>
+			<arg value="install"/>
+			<arg value="rmagick"/>
+			<arg value="--platform=ruby"/>
+			<arg value="--"/>
+			<arg value="--with-opt-lib=${imagemagick.home.unix}/lib"/>
+			<arg value="--with-opt-include=${imagemagick.home.unix}/include"/>
+		</exec>
+		
+		<mkdir dir="${install.dir}/gems"/>
+		<exec executable="${ruby.bin.ruby}" dir="${install.dir}/gems">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="fetch"/>
+			<arg value="rmagick"/>
+		</exec>
+		
+		
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="PATH" path="${imageMagick.home};${ruby.home}\\bin;${env.PATH}"/>
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}\\bin\\gem"/>
+			<arg value="install"/>
+			<arg value="rmagick"/>
+			<arg value="--platform=ruby"/>
+			<arg value="--"/>
+			<arg value="--with-opt-lib=${imageMagick.home.unix}/lib"/>
+			<arg value="--with-opt-include=${imageMagick.home.unix}/include"/>
+		</exec>
+    
+    
+    C:\Data\workspaces\temp\innounp\innounp-0.37

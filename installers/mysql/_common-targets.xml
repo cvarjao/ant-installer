@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mysql-common-targets" basedir=".">
+	<target name="set-mysql.home">
+		<fail message="This target must be implemented"/>
+	</target>
+</project>

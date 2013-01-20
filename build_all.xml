@@ -1,0 +1,801 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="redmine-installer" basedir=".">
+	<property file="build.properties"/>
+	<property name="ruby.default.impl" value="cruby"/>
+	<property name="eol" value="${line.separator}"/>
+	<property environment="env"/>
+
+	<macrodef name="dproperty">
+		<attribute name="prefix" default=""/>
+		<attribute name="sufix" default=""/>
+		<attribute name="property" default=""/>
+		<attribute name="version" default=""/>
+		<sequential>
+			<property name="@{property}" value="${@{prefix}@{version}@{sufix}}" />
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="dpropertyname">
+		<attribute name="prefix" default=""/>
+		<attribute name="sufix" default=""/>
+		<attribute name="property" default=""/>
+		<attribute name="value" default=""/>
+		<sequential>
+			<property name="@{prefix}@{property}@{sufix}" value="@{value}" />
+		</sequential>
+	</macrodef>
+	<macrodef name="geminstall">
+		<attribute name="name" default=""/>
+		<attribute name="version" default=""/>
+		<attribute name="native" default=""/>
+		<sequential>
+			<echo>gmem install @{name} -v @{version}</echo>
+			<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+				<env key="HOME" value="${ruby.user.home}"/>
+				<arg value="${ruby.home}/bin/gem"/>
+				<arg value="install"/>
+				<arg value="@{name}"/>
+				<arg value="--no-rdoc"/>
+				<arg value="--no-ri"/>
+				<arg value="-v"/>
+				<arg value="@{version}"/>
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="installCoreRubyGems">
+		<attribute name="home" default=""/>
+		<attribute name="ruby" default=""/>
+		<sequential>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="installCoreRubyGems_old">
+		<attribute name="home" default=""/>
+		<attribute name="ruby" default=""/>
+		<sequential>
+			<echo>ruby.home:'@{home}'</echo>
+			<echo>ruby.home:'gem list'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+				<arg value="list"/>
+			</exec>
+			<echo>ruby.home:'gem update'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+			    <arg value="update"/>
+				<arg value="--no-rdoc"/>
+			</exec>
+			<echo>ruby.home:'gem list'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+				<arg value="list"/>
+			</exec>
+			<echo>ruby.home:'gem install bundler'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+			    <arg value="install"/>
+				<arg value="bundler"/>
+				<arg value="--no-rdoc"/>
+			</exec>
+			<echo>ruby.home:'gem install warbler'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+			    <arg value="install"/>
+				<arg value="warbler"/>
+				<arg value="--no-rdoc"/>
+			</exec>
+			<echo>ruby.home:'gem cleanup'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+			    <arg value="cleanup"/>
+			</exec>
+			<echo>ruby.home:'gem list'</echo>
+			<exec executable="@{ruby}" dir="@{home}">
+				<arg value="@{home}/bin/gem"/>
+				<arg value="list"/>
+			</exec>
+		</sequential>
+	</macrodef>
+	<macrodef name="ruby">
+		<attribute name="dir" default="${basedir}"/>
+		<element name="args" implicit="true"/>
+		<sequential>
+			<exec executable="${ruby.bin.ruby}" dir="@{dir}">
+				<env key="PATH" path="${ruby.home}\bin;${devkit.home}\bin"/>
+				<args/>
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<target name="check-download-mysql" unless="offline">
+	    <pathconvert property="mysql.download.file" targetos="windows">
+	      <path location="${download.dir}/mysql-${mysql.version}.zip"/>
+	    </pathconvert>
+		
+		<condition property="download.mysql.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${mysql.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-download-devkit" unless="offline">
+	    <pathconvert property="devkit.download.file" targetos="windows">
+	      <path location="${download.dir}/devkit-${devkit.version}.exe"/>
+	    </pathconvert>
+		
+		<condition property="download.devkit.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${devkit.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+		
+	<target name="check-download-cruby" unless="offline">
+	    <pathconvert property="cruby.download.file" targetos="windows">
+	      <path location="${download.dir}/cruby-${cruby.version}.7z"/>
+	    </pathconvert>
+		<echo>cruby.download.file:${cruby.download.file}</echo>
+		<condition property="download.cruby.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${cruby.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-download-jruby" unless="offline">
+		<property name="jruby.download.file" value="${download.dir}/jruby-${jruby.version}.zip"/>
+		<condition property="download.jruby.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${jruby.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-download-redmine" unless="offline">
+		<property name="redmine.download.file" value="${download.dir}/redmine-${redmine.version}.zip"/>
+		<condition property="download.redmine.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${redmine.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="check-download-7zip" unless="offline">
+		<property name="7zip.archive.filename" value="7zip-${redmine.version}.zip"/>
+		<property name="7zip.download.file" value="${download.dir}/${7zip.archive.filename}"/>
+		<condition property="download.7zip.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${7zip.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-7zip" depends="check-download-7zip" if="download.7zip.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${7zip.archive.url}" dest="${7zip.download.file}" usetimestamp="true"/>
+	</target>
+		
+	<target name="download-cruby" depends="check-download-cruby" if="download.cruby.ok">
+        <mkdir dir="${download.dir}"/>
+		<dproperty property="cruby.archive.url" prefix="cruby.dist." version="${cruby.version}"/>
+		<echo>cruby.archive.url:${cruby.archive.url}</echo>
+        <get src="${cruby.archive.url}" dest="${cruby.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="download-devkit" depends="check-download-devkit" if="download.devkit.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${devkit.archive.url}" dest="${devkit.download.file}" usetimestamp="true"/>
+	</target>
+		
+	<target name="download-jruby" depends="check-download-jruby" if="download.jruby.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${jruby.archive.url}" dest="${jruby.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="download-mysql" depends="check-download-mysql" if="download.mysql.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${mysql.archive.url}" dest="${mysql.download.file}" usetimestamp="true"/>
+	</target>
+		
+	<target name="download-redmine" depends="check-download-redmine" if="download.redmine.ok">
+        <mkdir dir="${download.dir}"/>
+		<dproperty property="redmine.archive.url" prefix="redmine.archive." sufix=".url" version="${redmine.version}"/>
+        <get src="${redmine.archive.url}" dest="${redmine.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="set-mysql.home">
+	    <pathconvert property="mysql.home" targetos="windows">
+	    	<dirset dir="${install.dir}/mysql" includes="*"/>
+	    </pathconvert>
+	    <pathconvert property="mysql.bin.mysql" targetos="windows">
+	    	<path location="${mysql.home}/bin/mysql.exe"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="check-install-mysql">
+		<property name="mysql.install.dir" value="${install.dir}/mysql"/>
+		<condition property="mysql.installed">
+			<available file="${mysql.install.dir}"/>
+		</condition>	
+	</target>
+	
+	<target name="install-mysql" depends="download-mysql,check-install-mysql" unless="mysql.installed">
+		<mkdir dir="${mysql.install.dir}"/>
+		<unzip src="${mysql.download.file}" dest="${mysql.install.dir}" />
+	</target>
+	
+	<target name="check-install-7zip">
+		<property name="7zip.install.dir" value="${install.dir}/7zip"/>
+		<condition property="7zip.installed">
+			<available file="${7zip.install.dir}"/>
+		</condition>	
+	</target>
+	
+	<target name="install-7zip" depends="download-7zip,check-install-7zip" unless="7zip.installed">
+		<mkdir dir="${7zip.install.dir}"/>
+		<unzip src="${7zip.download.file}" dest="${7zip.install.dir}" />
+	</target>
+	
+	<target name="check-extract-devkit">
+	    <pathconvert property="devkit.install.dir" targetos="windows">
+	      <path location="${install.dir}/devkit/devkit-${devkit.version}"/>
+	    </pathconvert>
+		<property name="devkit.home.dir" value="${devkit.install.dir}"/>
+		<echo>devkit.install.dir:${devkit.install.dir}</echo>
+		<echo>devkit.home.dir:${devkit.home.dir}</echo>
+		<condition property="devkit.installed">
+			<available file="${devkit.home.dir}"/>
+		</condition>	
+	</target>
+		
+	<target name="extract-devkit" depends="install-7zip,download-devkit,check-extract-devkit" unless="devkit.installed">
+		<mkdir dir="${devkit.install.dir}"/>
+		<exec executable="${7zip.install.dir}/7za.exe" dir="${devkit.install.dir}">
+		    <arg value="x"/>
+			<arg value="${devkit.download.file}"/>
+			<arg value="-y"/>
+			<arg value="-r"/>
+		</exec>
+	</target>
+	
+	<target name="install-devkit" depends="extract-devkit">
+		
+	</target>
+	
+	<target name="configure-devkit" depends="_set-cruby.home, set-devkit.home">
+		<echo>dk.rb init</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="init"/>
+		</exec>
+		<echo file="${devkit.home}/config.yml" append="true" >- ${ruby.home}${eol}</echo>
+		<echo>dk.rb review</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="review"/>
+		</exec>
+		<echo>dk.rb install</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="install"/>
+		</exec>
+	</target>
+	
+	<target name="check-install-cruby">
+	    <pathconvert property="cruby.install.dir" targetos="windows">
+	      <path location="${install.dir}/cruby"/>
+	    </pathconvert>
+		<echo>ruby.install.dir:${cruby.install.dir}</echo>
+		<condition property="cruby.installed">
+			<available file="${cruby.install.dir}/cruby-${cruby.version}"/>
+		</condition>	
+	</target>
+	
+	
+	<target name="install-ruby-core-gems" depends="set-ruby.home">	    
+		<installCoreRubyGems home="${ruby.home}" ruby="${ruby.bin.ruby}"/>
+	</target>
+	
+	<target name="install-cruby" depends="_install-cruby, install-devkit" unless="cruby.installed">
+	    <pathconvert property="cruby.home" targetos="windows">
+	    	<dirset dir="${install.dir}/cruby" includes="cruby-${cruby.version}"/>
+	    </pathconvert>
+		
+	    <pathconvert property="cruby.bin.ruby" targetos="windows">
+	    	<path location="${cruby.home}/bin/ruby.exe"/>
+	    </pathconvert>
+		<installCoreRubyGems home="${cruby.home}" ruby="${cruby.bin.ruby}"/>
+	</target>
+	
+	<target name="_install-cruby" depends="install-7zip,download-cruby,check-install-cruby" unless="cruby.installed">
+		<local name="temp.cruby.home"/>
+		<echo>cruby.install.dir:${cruby.install.dir}</echo>
+		<mkdir dir="${cruby.install.dir}"/>
+		<echo>Extracting '${cruby.download.file}' ...</echo>
+		<exec executable="${7zip.install.dir}/7za.exe" dir="${cruby.install.dir}" output="${cruby.install.dir}/cruby-${cruby.version}.log" >
+		    <arg value="x"/>
+			<arg value="${cruby.download.file}"/>
+			<arg value="-y"/>
+			<arg value="-r"/>
+		</exec>
+	    <pathconvert property="temp.cruby.home" targetos="windows">
+	      <dirset dir="${cruby.install.dir}" includes="ruby-${cruby.version}*"/>
+	    </pathconvert>
+		<echo>Moving folder '${temp.cruby.home}' to '${cruby.install.dir}/cruby-${cruby.version}' </echo>
+		<move file="${temp.cruby.home}" tofile="${cruby.install.dir}/cruby-${cruby.version}"/>
+	</target>
+	
+	<target name="check-install-jruby">
+	    <pathconvert property="jruby.install.dir" targetos="windows">
+	      <path location="${install.dir}/jruby"/>
+	    </pathconvert>
+		<echo>jruby.install.dir:${jruby.install.dir}</echo>
+		<condition property="jruby.installed">
+			<available file="${jruby.install.dir}/jruby-${jruby.version}"/>
+		</condition>	
+	</target>
+	
+	<target name="install-jruby" depends="_set-jruby.home,download-jruby,check-install-jruby" unless="jruby.installed">
+		<mkdir dir="${jruby.install.dir}"/>
+		<unzip src="${jruby.download.file}" dest="${jruby.install.dir}" />
+		
+	    <pathconvert property="jruby.home" targetos="windows">
+	    	<dirset dir="${install.dir}/jruby" includes="jruby-${jruby.version}"/>
+	    </pathconvert>
+		
+	    <pathconvert property="jruby.bin.ruby" targetos="windows">
+	    	<path location="${jruby.home}/bin/jruby.exe"/>
+	    </pathconvert>
+	    
+		<installCoreRubyGems home="${jruby.home}" ruby="${jruby.bin.ruby}"/>
+	</target>
+	
+	<target name="pick_ruby_impl">
+		<fail unless="ruby.default.impl" message="No ruby implementation selected"/>
+		
+		<property name="ruby.default.impl.cruby" value="true"/>
+		<dpropertyname property="ruby.default.impl" sufix="${ruby.default.impl}" value="true" />
+		<echo>ruby.default.impl:${ruby.default.impl}</echo>
+		<echo>ruby.default.impl.cruby:${ruby.default.impl.cruby}</echo>
+	</target>
+		
+	<target name="set-ruby.home" depends="pick_ruby_impl,set-cruby.home,set-jruby.home">
+	    <pathconvert property="ruby.user.home" targetos="windows">
+	    	<path location="${install.dir}/home"/>
+	    </pathconvert>
+		
+		<echo>ruby.home:${ruby.home}</echo>
+		<echo>ruby.user.home:${ruby.user.home}</echo>
+		<echo>ruby.bin.ruby:${ruby.bin.ruby}</echo>
+		
+	</target>
+	
+	<target name="set-devkit.home">
+	    <pathconvert property="devkit.home" targetos="windows">
+	    	<path location="${install.dir}/devkit/devkit-${devkit.version}"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="set-cruby.home" if="ruby.default.impl.cruby">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/cruby/cruby-${cruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/ruby.exe"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="_set-cruby.home">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/cruby/cruby-${cruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/ruby.exe"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="set-jruby.home" if="ruby.default.impl.jruby">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/jruby/jruby-${jruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/jruby.exe"/>
+	    </pathconvert>
+	</target>
+		
+	<target name="_set-jruby.home">
+	    <pathconvert property="ruby.home" targetos="windows">
+	    	<path location="${install.dir}/jruby/jruby-${jruby.version}"/>
+	    </pathconvert>
+	    <pathconvert property="ruby.bin.ruby" targetos="windows">
+	    	<path location="${ruby.home}/bin/jruby.exe"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="set-redmine.home">
+	    <pathconvert property="redmine.home" targetos="windows">
+	    	<path location="${install.dir}/redmine/redmine-${redmine.version}"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="check-extract-redmine">
+	    <pathconvert property="redmine.install.dir" targetos="windows">
+	      <path location="${install.dir}/redmine"/>
+	    </pathconvert>
+		<echo>redmine.install.dir:${redmine.install.dir}</echo>
+		<condition property="redmine.installed">
+			<available file="${redmine.install.dir}/redmine-${redmine.version}"/>
+		</condition>	
+	</target>
+	
+	<target name="extract-redmine" depends="download-redmine,check-extract-redmine" unless="redmine.installed">
+		<mkdir dir="${redmine.install.dir}"/>
+		<unzip src="${redmine.download.file}" dest="${redmine.install.dir}" />
+	</target>
+	
+	<target name="install-redmine-db" depends="set-mysql.home,set-ruby.home,set-redmine.home">
+		<echo>CREATE DATABASE</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="create database redmine character set utf8;">
+			<arg line="-u root"/>
+		</exec>
+		<echo>CREATE USER</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="create user 'redmine'@'localhost' identified by 'redmine123';">
+			<arg line="-u root"/>
+		</exec>
+		<echo>GRANT PRIVILEGES</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="grant all privileges on redmine.* to 'redmine'@'localhost';">
+			<arg line="-u root"/>
+		</exec>
+		
+		<echo>rake db:migrate</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="RAILS_ENV" value="production"/>
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg value="db:migrate"/>
+		</exec>
+		
+		<echo>rake redmine:load_default_data</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="RAILS_ENV" value="production"/>
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg value="--trace"/>
+			<arg value="redmine:load_default_data"/>
+		</exec>
+	</target>
+	
+	<target name="remove-redmine-db" depends="set-mysql.home">
+		<echo>DROP SCHEMA:</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="DROP SCHEMA IF EXISTS redmine;">
+			<arg line="-u root"/>
+		</exec>
+		
+		<echo>DROP USER:</echo>
+		<exec executable="${mysql.bin.mysql}" dir="${basedir}" inputstring="DROP USER 'redmine'@'localhost';">
+			<arg line="-u root"/>
+		</exec>
+	</target>
+	
+	<target name="install-redmine-extra-gems" depends="set-ruby.home,set-redmine.home">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg line="install activerecord-mysql-adapter --install-dir vendor/bundle --no-rdoc"/>
+		</exec>
+	</target>
+	
+	<target name="run-redmine" depends="set-ruby.home,set-redmine.home">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="script/rails"/>
+			<arg line="server webrick -e production"/>
+		</exec>
+	</target>
+	
+	<target name="redmine_gem_list" depends="set-ruby.home,set-redmine.home">
+		<echo>gem env</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="env"/>
+		</exec>
+		<echo>gem list</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="list"/>
+		</exec>
+		<!--
+		<echo>bundle check</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="check"/>
+		</exec>
+		-->
+		<echo>bundle list</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="list"/>
+		</exec>
+		<echo>bundle show</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="show"/>
+		</exec>		
+		<echo>bundle platform</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg value="platform"/>
+		</exec>
+	</target>
+		
+	<target name="ruby_gem_list" depends="set-ruby.home">
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="list"/>
+		</exec>
+	</target>
+	
+	<target name="ruby_gem_env" depends="set-ruby.home">
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/gem"/>
+			<arg value="env"/>
+		</exec>
+	</target>
+		
+	<target name="redmine_war" depends="install-redmine">
+		<!--
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}/bin">
+			<arg value="${ruby.home}/bin/gem"/>
+		    <arg value="install"/>
+			<arg line="jruby-openssl activerecord-jdbcmysql-adapter jdbc-postgres jdbc-mysql"/>
+		</exec>
+		-->
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="config"/>
+			<arg value="FORCE=1"/>
+		</exec>
+		<copy file="${redmine.home}/config/warble.rb" tofile="${redmine.home}/config/warble.rb.original"/>
+		
+		<echo level="error" file="${redmine.home}/config/warble.rb">Warbler::Config.new do |config|${eol}</echo>
+		<!-- <echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.features = %w(compiled)${eol}</echo>-->
+		<!--<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.features = %w(executable compiled)${eol}</echo>-->
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.dirs = %w(app config lib log vendor tmp exta files)${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;,&quot;activerecord-jdbcpostgresql-adapter&quot;,&quot;activerecord-jdbcsqllite3-adapter&quot;, &quot;jruby-openssl&quot;, &quot;i18n&quot;, &quot;rack&quot;, &quot;jdbc-postgres&quot;, &quot;jdbc-sqllite3&quot;]${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.webserver = 'jetty'${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.jar_name = 'redmine##${redmine.version}'${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">  config.webxml.jruby.compat.version = "1.9"${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/warble.rb">end${eol}</echo>
+		<echo>warble war:clean</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}" output="${redmine.home}/war_debug.log">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war:clean"/>
+		</exec>
+		
+		<!--
+		<replace file="${redmine.home}/config/warble.rb" summary="true">
+			<replacefilter token="# config.features = %w(gemjar)" value="config.features = %w(gemjar compiled)"/>
+			<replacefilter token="config.dirs = %w(app config lib log vendor tmp)" value="config.dirs = %w(app config lib log vendor tmp exta files)"/>
+			<replacefilter token="# config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;, &quot;jruby-openssl&quot;]" value="config.gems += [&quot;activerecord-jdbcmysql-adapter&quot;, &quot;jruby-openssl&quot;, &quot;i18n&quot;, &quot;rack&quot;, &quot;jdbc-postgres&quot;]"/>
+		</replace>
+		-->
+		<!--
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}" output="${redmine.home}/war_debug.log">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war:debug"/>
+		</exec>
+		-->
+		<echo>warble war</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/warble"/>
+			<arg value="war"/>
+		</exec>
+		<mkdir dir="${dist.dir}"/>
+		<delete file="${dist.dir}/redmine##${redmine.version}.war"/>
+		<copy file="${redmine.home}/redmine##${redmine.version}.war" todir="${dist.dir}"/>
+	</target>
+	
+	<target name="install-redmine-bundle-install" depends="set-redmine.home,set-ruby.home, _install-redmine-bundle-install">
+		
+	</target>
+	<target name="install-redmine-bundle-update" depends="set-redmine.home,set-ruby.home">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg line="update"/>
+		</exec>
+	</target>
+	
+	<target name="_install-redmine-bundle-install__">
+	</target>
+	<target name="_install-redmine-bundle-install">
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}/bin/bundle"/>
+			<arg line="install --local --system --without development test rmagick"/>
+		</exec>
+	</target>
+	
+	<target name="install-redmine" depends="install-cruby,extract-redmine,set-redmine.home,set-ruby.home, _install-redmine-bundle-install">
+		<echo>ruby.home:'${ruby.home}'</echo>
+		<echo>ruby.bin.ruby:'${ruby.bin.ruby}'</echo>
+		<echo>redmine.home:'${redmine.home}'</echo>
+		<echo>redmine.install.dir:'${redmine.install.dir}'</echo>
+		
+		
+		<echo level="error" file="${redmine.home}/config/database.yml">production:${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  adapter: mysql2${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  database: redmine${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  host: localhost${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  username: redmine${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  password: redmine123${eol}</echo>
+		<echo level="error" append="true" file="${redmine.home}/config/database.yml">  encoding: utf8${eol}</echo>
+		
+		<exec executable="${ruby.bin.ruby}" dir="${redmine.home}">
+			<arg value="${ruby.home}/bin/rake"/>
+			<arg line="generate_secret_token"/>
+		</exec>
+		
+	</target>
+	
+	<target name="check" depends="_set-cruby.home,set-devkit.home">
+		<ruby>
+			<arg value="-v"/>
+		</ruby>
+	</target>
+	
+	<target name="gem_install_rmagick" depends="set-ruby.home">
+		<!--
+	    <pathconvert property="imageMagick.home" targetos="windows">
+	    	<path location="C:/Data/apps/ImageMagick-6.8.1-Q16"/>
+	    </pathconvert>
+		-->
+		
+	    <pathconvert property="imageMagick.home.unix" targetos="unix">
+	    	<path location="${imageMagick.home}"/>
+	    </pathconvert>
+	    	
+		<echo>imagemagick.home:${imageMagick.home}</echo>
+		<echo>imagemagick.home.unix:${imageMagick.home.unix}</echo>
+		
+		<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+			<env key="PATH" path="${imageMagick.home};${ruby.home}\\bin;${env.PATH}"/>
+			<env key="HOME" value="${ruby.user.home}"/>
+			<arg value="${ruby.home}\\bin\\gem"/>
+			<arg value="install"/>
+			<arg value="rmagick"/>
+			<arg value="--platform=ruby"/>
+			<arg value="--"/>
+			<arg value="--with-opt-lib=${imageMagick.home.unix}/lib"/>
+			<arg value="--with-opt-include=${imageMagick.home.unix}/include"/>
+		</exec>
+		
+	</target>
+	
+	<target name="gem_install_all" depends="set-ruby.home">
+		<geminstall name="actionmailer" version="3.2.11"/>
+		<geminstall name="actionpack" version="3.2.11"/>
+		<geminstall name="activemodel" version="3.2.11"/>
+		<geminstall name="activerecord" version="3.2.11"/>
+		<geminstall name="activeresource" version="3.2.11"/>
+		<geminstall name="activesupport" version="3.2.11"/>
+		<geminstall name="ansi" version="1.4.3"/>
+		<geminstall name="arel" version="3.0.2"/>
+		<geminstall name="aws-sdk" version="1.6.9"/>
+		<geminstall name="bcrypt-ruby" version="3.0.1" native="x86-mingw32"/>
+		<geminstall name="bigdecimal" version="1.1.0"/>
+		<geminstall name="bluecloth" version="2.1.0" native="x86-mingw32"/>
+		<geminstall name="builder" version="3.0.0"/>
+		<geminstall name="bundler" version="1.2.3"/>
+		<geminstall name="bundler" version="1.0.21"/>
+		<geminstall name="coderay" version="1.0.8"/>
+		<geminstall name="coderay" version="1.0.6"/>
+		<geminstall name="coffee-rails" version="3.2.2"/>
+		<geminstall name="coffee-script" version="2.2.0"/>
+		<geminstall name="coffee-script-source" version="1.3.3"/>
+		<geminstall name="crack" version="0.3.1"/>
+		<geminstall name="daemons" version="1.1.9"/>
+		<geminstall name="daemons" version="1.1.8"/>
+		<geminstall name="diff-lcs" version="1.1.3"/>
+		<geminstall name="erubis" version="2.7.0"/>
+		<geminstall name="eventmachine" version="1.0.0" native="x86-mingw32"/>
+		<geminstall name="execjs" version="1.4.0"/>
+		<geminstall name="fastercsv" version="1.5.4"/>
+		<geminstall name="hike" version="1.2.1"/>
+		<geminstall name="hoe" version="3.0.6"/>
+		<geminstall name="hpricot" version="0.8.5"/>
+		<geminstall name="httparty" version="0.8.3"/>
+		<geminstall name="i18n" version="0.6.1"/>
+		<geminstall name="i18n" version="0.6.0"/>
+		<geminstall name="io-console" version="0.3"/>
+		<geminstall name="journey" version="1.0.4"/>
+		<geminstall name="jquery-rails" version="2.1.3"/>
+		<geminstall name="jquery-rails" version="2.0.3"/>
+		<geminstall name="json" version="1.7.6"/>
+		<geminstall name="json" version="1.7.5"/>
+		<geminstall name="json" version="1.5.4"/>
+		<geminstall name="mail" version="2.4.4"/>
+		<geminstall name="metaclass" version="0.0.1"/>
+		<geminstall name="mime-types" version="1.19"/>
+		<geminstall name="mime-types" version="1.18"/>
+		<geminstall name="mini_magick" version="3.4"/>
+		<geminstall name="mini_portile" version="0.3.0"/>
+		<geminstall name="minitest" version="2.5.1"/>
+		<geminstall name="mocha" version="0.12.3"/>
+		<geminstall name="multi_json" version="1.5.0"/>
+		<geminstall name="multi_json" version="1.3.6"/>
+		<geminstall name="multi_xml" version="0.5.1"/>
+		<geminstall name="mustache" version="0.99.4"/>
+		<geminstall name="mysql2" version="0.3.11" native="x86-mingw32"/>
+		<geminstall name="mysql2" version="0.2.18"/>
+		<geminstall name="net-ldap" version="0.3.1"/>
+		<geminstall name="nokogiri" version="1.5.5" native="x86-mingw32"/>
+		<geminstall name="nokogiri" version="1.4.7" native="x86-mingw32"/>
+		<geminstall name="polyglot" version="0.3.3"/>
+		<geminstall name="prototype-rails" version="3.2.1"/>
+		<geminstall name="rack" version="1.4.4"/>
+		<geminstall name="rack" version="1.4.1"/>
+		<geminstall name="rack-cache" version="1.2"/>
+		<geminstall name="rack-mount" version="0.8.3"/>
+		<geminstall name="rack-openid" version="1.3.1"/>
+		<geminstall name="rack-ssl" version="1.3.2"/>
+		<geminstall name="rack-test" version="0.6.2"/>
+		<geminstall name="rack-test" version="0.6.1"/>
+		<geminstall name="rails" version="3.2.11"/>
+		<geminstall name="railties" version="3.2.11"/>
+		<geminstall name="rake" version="10.0.3"/>
+		<geminstall name="rake" version="0.9.2.2"/>
+		<geminstall name="rake-compiler" version="0.8.1"/>
+		<geminstall name="rdiscount" version="1.6.8"/>
+		<geminstall name="rdoc" version="3.12"/>
+		<geminstall name="rdoc" version="3.9.4"/>
+		<geminstall name="RedCloth" version="4.2.9" native="x86-mingw32"/>
+		<geminstall name="rmagick" version="2.13.1"/>
+		<geminstall name="ronn" version="0.7.3"/>
+		<geminstall name="rspec" version="2.11.0"/>
+		<geminstall name="rspec-core" version="2.11.1"/>
+		<geminstall name="rspec-expectations" version="2.11.2"/>
+		<geminstall name="rspec-mocks" version="2.11.1"/>
+		<geminstall name="ruby-openid" version="2.1.8"/>
+		<geminstall name="rubygems-update" version="1.8.24"/>
+		<geminstall name="rvm" version="1.11.3.5"/>
+		<geminstall name="sass" version="3.1.20"/>
+		<geminstall name="sass-rails" version="3.2.5"/>
+		<geminstall name="sprockets" version="2.4.5"/>
+		<geminstall name="sprockets" version="2.2.2"/>
+		<geminstall name="sprockets" version="2.2.1"/>
+		<geminstall name="sprockets" version="2.1.3"/>
+		<geminstall name="sprockets" version="2.1.2"/>
+		<geminstall name="sqlite3" version="1.3.7" native="x86-mingw32"/>
+		<geminstall name="sqlite3" version="1.3.6" native="x86-mingw32"/>
+		<geminstall name="sqlite3-ruby" version="1.3.2" native="x86-mingw32"/>
+		<geminstall name="subexec" version="0.2.2"/>
+		<geminstall name="test-unit" version="2.5.2"/>
+		<geminstall name="thin" version="1.5.0"/>
+		<geminstall name="thin" version="1.3.1"/>
+		<geminstall name="thor" version="0.16.0"/>
+		<geminstall name="thor" version="0.15.4"/>
+		<geminstall name="thor" version="0.14.6"/>
+		<geminstall name="tilt" version="1.3.3"/>
+		<geminstall name="treetop" version="1.4.12"/>
+		<geminstall name="treetop" version="1.4.10"/>
+		<geminstall name="turn" version="0.9.6"/>
+		<geminstall name="tzinfo" version="0.3.35"/>
+		<geminstall name="tzinfo" version="0.3.33"/>
+		<geminstall name="uglifier" version="1.2.6"/>
+		<geminstall name="uuidtools" version="2.1.3"/>
+		<geminstall name="yard" version="0.8.1"/>
+	</target>
+</project>

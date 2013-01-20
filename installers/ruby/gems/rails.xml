@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-gems-rails" basedir=".">
+	<dirname property="ant.ruby-gems-rails.dir" file="${ant.file.ruby-gems-rails}"/>	
+	<target name="gem_install_rails" depends="set-ruby.home" >
+		<gemInstall name="rails"/>
+	</target>
+</project>

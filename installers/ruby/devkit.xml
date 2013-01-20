@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-devkit" basedir=".">
+	<import file="../7zip.xml"/>
+	<import file="_common.xml"/>
+	
+	<target name="set-devkit.home">
+	    <pathconvert property="devkit.home" targetos="windows">
+	    	<path location="${install.dir}/devkit/devkit-${devkit.version}"/>
+	    </pathconvert>
+	</target>
+	
+	<target name="check-download-devkit" unless="offline">
+	    <pathconvert property="devkit.download.file" targetos="windows">
+	      <path location="${download.dir}/devkit-${devkit.version}.exe"/>
+	    </pathconvert>
+		
+		<condition property="download.devkit.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${devkit.download.file}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-devkit" depends="check-download-devkit" if="download.devkit.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${devkit.archive.url}" dest="${devkit.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-extract-devkit">
+	    <pathconvert property="devkit.install.dir" targetos="windows">
+	      <path location="${install.dir}/devkit/devkit-${devkit.version}"/>
+	    </pathconvert>
+		<property name="devkit.home.dir" value="${devkit.install.dir}"/>
+		<echo>devkit.install.dir:${devkit.install.dir}</echo>
+		<echo>devkit.home.dir:${devkit.home.dir}</echo>
+		<condition property="devkit.installed">
+			<available file="${devkit.home.dir}"/>
+		</condition>	
+	</target>
+		
+	<target name="extract-devkit" depends="install-7zip,download-devkit,check-extract-devkit" unless="devkit.installed">
+		<mkdir dir="${devkit.install.dir}"/>
+		<exec executable="${7zip.install.dir}/7za.exe" dir="${devkit.install.dir}">
+		    <arg value="x"/>
+			<arg value="${devkit.download.file}"/>
+			<arg value="-y"/>
+			<arg value="-r"/>
+		</exec>
+	</target>
+	
+	<target name="install-devkit" depends="extract-devkit">
+		
+	</target>
+	
+	<target name="configure-devkit" depends="set-ruby.home, set-devkit.home">
+		<echo>dk.rb init</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="init"/>
+		</exec>
+		<echo file="${devkit.home}/config.yml" append="true" >- ${ruby.home}${eol}</echo>
+		<echo>dk.rb review</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="review"/>
+		</exec>
+		<echo>dk.rb install</echo>
+		<exec executable="${ruby.bin.ruby}" dir="${devkit.home}">
+			<arg value="dk.rb"/>
+		    <arg value="install"/>
+		</exec>
+	</target>
+</project>

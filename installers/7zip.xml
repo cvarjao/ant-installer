@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="7zip" basedir=".">
+	<dirname property="ant.7zip.dir" file="${ant.file.7zip}"/>
+	<property file="${ant.7zip.dir}/7zip.properties"/>
+	
+	<target name="check-download-7zip" unless="offline">
+		<property name="7zip.archive.filename" value="7zip-${7zip.version}.zip"/>
+		<property name="7zip.download.file" value="${download.dir}/${7zip.archive.filename}"/>
+		<condition property="download.7zip.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${7zip.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-7zip" depends="check-download-7zip" if="download.7zip.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${7zip.archive.url}" dest="${7zip.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-7zip">
+		<property name="7zip.install.dir" value="${install.dir}/7zip"/>
+		<condition property="7zip.installed">
+			<available file="${7zip.install.dir}"/>
+		</condition>	
+	</target>
+	
+	<target name="install-7zip" depends="download-7zip,check-install-7zip" unless="7zip.installed">
+		<mkdir dir="${7zip.install.dir}"/>
+		<unzip src="${7zip.download.file}" dest="${7zip.install.dir}" />
+	</target>
+</project>

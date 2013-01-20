@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="innounp" basedir=".">
+	<dirname property="ant.innounp.dir" file="${ant.file.innounp}"/>
+	<property file="${ant.innounp.dir}/innounp.properties"/>
+	
+	<import file="unrar.xml"/>
+	
+	<target name="check-download-innounp" unless="offline">
+		<property name="innounp.archive.filename" value="innounp-${innounp.version}.rar"/>
+		<property name="innounp.download.file" value="${download.dir}/${innounp.archive.filename}"/>
+		<condition property="download.innounp.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${innounp.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-innounp" depends="check-download-innounp" if="download.innounp.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${innounp.archive.url}" dest="${innounp.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-innounp">
+		<property name="innounp.install.dir" value="${install.dir}/innounp"/>
+		<property name="innounp.home" value="${innounp.install.dir}/innounp-${innounp.version}"/>
+		<property name="innounp.bin" value="${innounp.home}/innounp.exe"/>
+		
+		<condition property="innounp.installed">
+			<available file="${innounp.home}"/>
+		</condition>
+	</target>
+	
+	<target name="install-innounp" depends="install-unrar,download-innounp,check-install-innounp" unless="innounp.installed">
+		<mkdir dir="${innounp.home}"/>
+		<exec executable="${unrar.bin}" dir="${innounp.home}">
+		    <arg value="x"/>
+			<arg value="${innounp.download.file}"/>
+			<arg value="-y"/>
+			<arg value="-r"/>
+		</exec>
+	</target>
+</project>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ruby-common" basedir=".">
+	<import file="_common-targets.xml"/>	
+	<dirname property="ant.ruby-common.dir" file="${ant.file.ruby-common}"/>
+
+	<macrodef name="gemInstall">
+		<attribute name="name"/>
+		<sequential>
+			<fail unless="ruby.home" message="property 'ruby.home' not set"/>
+			
+			<ant antfile="${ant.ruby-common.dir}/gems/gem.xml" target="gem_install">
+				<propertyset>
+				  <propertyref prefix="ruby."/>
+				</propertyset>
+				<property name="gem.name" value="@{name}"/>
+			</ant>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="ruby">
+		<attribute name="dir" default="${basedir}"/>
+		<element name="args" implicit="true"/>
+		<sequential>
+			<exec executable="${ruby.bin.ruby}" dir="@{dir}">
+				<env key="PATH" path="${ruby.home}\bin;${devkit.home}\bin"/>
+				<env key="HOME" value="${ruby.user.home}"/>
+				<args/>
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="gem">
+		<attribute name="dir" default="${basedir}"/>
+		<element name="args" implicit="true"/>
+		<sequential>
+			<exec executable="${ruby.bin.ruby}" dir="@{dir}">
+				<env key="PATH" path="${ruby.home}\bin;${devkit.home}\bin"/>
+				<env key="HOME" value="${ruby.user.home}"/>
+				<arg file="${ruby.home}/bin/gem"/>
+				<args/>
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="checkRubyGem">
+		<attribute name="name"/>
+		<sequential>
+			<local name="gem.includes"/>
+			<property name="gem.includes" value="lib/ruby/gems/1.9.1/cache/@{name}-*.gem"/>
+			<echo>ruby.home:'${ruby.home}'</echo>
+			<echo>gem.includes:'${gem.includes}'</echo>
+		    
+		    <pathconvert property="ruby.gem.@{name}.path" setonempty="false">
+		    	<fileset dir="${ruby.home}" includes="${gem.includes}"/>
+		    </pathconvert>
+		    
+		    <echo>ruby.gem.@{name}.path:'${ruby.gem.@{name}.path}'</echo>
+		    
+			<condition property="ruby.gem.@{name}.installed">
+				<and>
+					<isset property="ruby.gem.@{name}.path"/>
+					<available file="${ruby.gem.@{name}.path}"/>
+				</and>
+			</condition>
+			<echo>ruby.gem.@{name}.installed:'${ruby.gem.@{name}.installed}'</echo>
+		</sequential>
+	</macrodef>
+	<macrodef name="geminstall">
+		<attribute name="name" default=""/>
+		<attribute name="version" default=""/>
+		<attribute name="native" default=""/>
+		<sequential>
+			<echo>gmem install @{name} -v @{version}</echo>
+			<exec executable="${ruby.bin.ruby}" dir="${ruby.home}">
+				<env key="HOME" value="${ruby.user.home}"/>
+				<arg value="${ruby.home}/bin/gem"/>
+				<arg value="install"/>
+				<arg value="@{name}"/>
+				<arg value="--no-rdoc"/>
+				<arg value="--no-ri"/>
+				<arg value="-v"/>
+				<arg value="@{version}"/>
+			</exec>
+		</sequential>
+	</macrodef>
+</project>
