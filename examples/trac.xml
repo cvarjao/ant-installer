@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="example.trac" basedir=".">
+	<dirname property="ant.example.trac.dir" file="${ant.file.example.trac}"/>
+	<property file="${ant.example.trac.dir}/build.properties"/>
+	<property name="installers.dir" location="${ant.example.trac.dir}/../installers"/>
+	<property environment="env"/>
+	
+	<import file="${installers.dir}/trac/trac.xml"/>
+</project>

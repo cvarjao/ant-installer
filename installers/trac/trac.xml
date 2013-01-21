@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="trac" basedir=".">
+	<dirname property="ant.trac.dir" file="${ant.file.trac}"/>
+	<property name="trac.properties.xml" location="${ant.trac.dir}/trac.properties.xml"/>
+	<xmlproperty file="${trac.properties.xml}" collapseAttributes="true"/>
+	
+	<import file="${ant.trac.dir}/../python/python.xml"/>
+	<import file="${ant.trac.dir}/../python/packages/distribute.xml"/>
+	<import file="${ant.trac.dir}/../python/packages/mysql-python.xml"/>
+	<import file="${ant.trac.dir}/../mysql/mysql.xml"/>
+	
+	<target name="echo-track">
+		<echoproperties prefix="trac."/>
+	</target>
+	
+	<target name="set-trac.home" depends="set-python.home">
+		<property name="trac.install.dir" value="${install.dir}/trac"/>
+	    <pathconvert property="trac.home" targetos="windows">
+	      <path location="${trac.install.dir}/trac-${trac.version}"/>
+	    </pathconvert>
+		<echo>trac.home:'${trac.home}'</echo>
+	</target>
+		
+	<target name="init-trac" depends="set-trac.home">
+		<property name="trac.download.dir" value="${download.dir}"/>
+		<dproperty property="trac.dist.ext" prefix="trac.dist." version="v${trac.version}" sufix=".ext"/>
+		<dproperty property="trac.download.url" prefix="trac.dist." version="v${trac.version}" sufix=".url"/>
+		
+		<property name="trac.dist.filename" value="trac-${trac.version}.${trac.dist.ext}"/>
+		
+	    <pathconvert property="trac.download.file" targetos="windows">
+	      <path location="${download.dir}/${trac.dist.filename}"/>
+	    </pathconvert>
+		
+		<condition property="trac.download.exists">
+			<and>
+				<available file="${trac.download.dir}/${trac.dist.filename}"/>
+			</and>
+		</condition>
+		
+		<condition property="trac.download.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><isset property="trac.download.exists"/></not>
+			</and>
+		</condition>
+		
+		<condition property="trac.installed.true">
+			<available file="${trac.home}"/>
+		</condition>
+		
+		<condition property="trac.installed.false">
+			<not><available file="${trac.home}"/></not>
+		</condition>
+				
+		<echoproperties prefix="trac."/>
+	</target>
+		
+	<target name="check-download-trac" depends="init-trac" unless="offline">
+		
+	</target>
+	
+	<target name="download-trac" depends="check-download-trac" if="trac.download.ok">
+        <mkdir dir="${trac.download.dir}"/>
+        <get src="${trac.download.url}" dest="${trac.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-trac">
+	</target>
+	
+	<target name="install-trac-MySQL-python" depends="init-trac,set-mingw.home">
+		<mkdir dir="${python.home}/temp"/>
+		<exec executable="${python.bin}" dir="${python.home}" output="${python.home}/temp/mysql-python.log" >
+			<arg file="${python.home}/Scripts/easy_install-script.py"/>
+			<arg value="MySQL-python"/>
+		</exec>
+	</target>
+		
+	<target name="install-trac-genshi" depends="init-trac">
+		<mkdir dir="${python.home}/temp"/>
+		
+		<exec executable="${python.bin}" dir="${python.home}" output="${python.home}/temp/genshi.log" >
+			<arg file="${python.home}/Scripts/easy_install-script.py"/>
+			<arg value="Genshi"/>
+		</exec>
+	</target>
+	
+	<target name="install-trac" depends="init-trac,set-mysql.home" unless="trac.installed.true">
+		<!-- 
+		
+		<unzip src="${trac.download.file}" dest="${trac.home}_tmp"/>
+		<move file="${trac.home}_tmp/Trac-1.0" tofile="${trac.home}"/>
+		<delete dir="${trac.home}_tmp"/>
+		 -->
+		<!--
+		<exec executable="${python.bin}" dir="${python.home}" output="${python.home}/temp/trac.log" >
+			<arg file="${python.home}/Scripts/easy_install-script.py"/>
+			<arg value="Trac==1.0"/>
+		</exec>
+		-->
+		<mkdir dir="${trac.home}"/>
+		<echo level="error" file="${trac.home}/trac-admin.cmd">@echo on${eol}</echo>
+		<echo level="error" append="true" file="${trac.home}/trac-admin.cmd">set PYTHON_HOME=${python.home}${eol}</echo>
+		<echo level="error" append="true" file="${trac.home}/trac-admin.cmd">${python.bin} ${python.home}/Scripts/trac-admin-script.py %*${eol}</echo>
+		
+		<echo level="error" file="${trac.home}/tracd.cmd">@echo on${eol}</echo>
+		<echo level="error" append="true" file="${trac.home}/tracd.cmd">set PYTHON_HOME=${python.home}${eol}</echo>
+		<echo level="error" append="true" file="${trac.home}/tracd.cmd">${python.bin} ${python.home}/Scripts/tracd-script.py %*${eol}</echo>
+	</target>
+	
+	<target name="install-trac-database" depends="set-trac.home,set-mysql.home">
+		<echo>CREATE DATABASE</echo>
+		<exec executable="${mysql.bin}" dir="${trac.home}" inputstring="CREATE DATABASE trac DEFAULT CHARACTER SET utf8 COLLATE utf8_bin;">
+			<arg line="-u root"/>
+		</exec>
+		<echo>CREATE USER</echo>
+		<exec executable="${mysql.bin}" dir="${trac.home}" inputstring="create user 'trac'@'localhost' identified by 'trac123';">
+			<arg line="-u root"/>
+		</exec>
+		<echo>GRANT PRIVILEGES</echo>
+		<exec executable="${mysql.bin}" dir="${trac.home}" inputstring="grant all privileges on trac.* to 'trac'@'localhost';">
+			<arg line="-u root"/>
+		</exec>
+	</target>
+</project>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mingw" basedir=".">
+	<dirname property="ant.mingw.dir" file="${ant.file.mingw}"/>
+	<property name="mingw.properties.xml" location="${ant.mingw.dir}/mingw.properties.xml"/>
+	<xmlproperty file="${mingw.properties.xml}" collapseAttributes="true"/>
+	
+	<target name="set-mingw.home">
+		<property name="mingw.install.dir" value="${install.dir}/mingw"/>
+	    <pathconvert property="mingw.home" targetos="windows">
+	      <path location="${mingw.install.dir}/mingw-${mingw.version}"/>
+	    </pathconvert>
+	    <pathconvert property="mingw.bin" targetos="windows">
+	      <path location="${mingw.home}/mingw.exe"/>
+	    </pathconvert>
+		<echo>mingw.home:'${mingw.home}'</echo>
+		<echo>mingw.bin:'${mingw.bin}'</echo>
+	</target>
+</project>

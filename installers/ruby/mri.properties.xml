@@ -1,0 +1,12 @@
+<ruby>
+	<mri version="1.9.3-p194">
+		<dist>
+			<v1.9.3-p194>
+				<x86 ext="zip">http://rubyforge.org/frs/download.php/76055/ruby-1.9.3-p194-i386-mingw32.7z</x86>
+			</v1.9.3-p194>
+			<v1.9.3-p195>
+				<x86 ext="zip">http://rubyforge.org/frs/download.php/75849/ruby-1.9.3-p195-i386-mingw32.7z</x86>
+			</v1.9.3-p195>
+		</dist>
+	</mri>
+</ruby>

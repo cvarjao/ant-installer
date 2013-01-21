@@ -1,0 +1,8 @@
+<mysql version="5.5.29">
+	<dist>
+		<v5.5.29>
+			<x64 ext="zip">http://cdn.mysql.com/Downloads/MySQL-5.5/mysql-5.5.29-winx64.zip</x64>
+			<x86 ext="zip">http://cdn.mysql.com/Downloads/MySQL-5.5/mysql-5.5.29-win32.zip</x86>
+		</v5.5.29>
+	</dist>
+</mysql>

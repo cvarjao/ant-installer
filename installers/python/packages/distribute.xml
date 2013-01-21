@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="python.pkg.distribute" basedir=".">
+	<dirname property="ant.python.pkg.distribute.dir" file="${ant.file.python.pkg.distribute}"/>
+	<property name="python.pkg.distribute.properties.xml" location="${ant.python.pkg.distribute.dir}/distribute.properties.xml"/>
+	<xmlproperty file="${python.pkg.distribute.properties.xml}" collapseAttributes="true"/>
+	
+	<import file="../python.xml"/>
+	
+	<target name="echo-distribute" depends="set-python.home">
+		<echoproperties prefix="python."/>
+	</target>
+	
+	<target name="install-python-pkg-distribute" depends="set-python.home">
+        <mkdir dir="${python.home}/temp"/>
+        <get src="${python.packages.distribute.download.url}" dest="${python.home}/temp/distribute_setup.py" usetimestamp="true"/>
+		<exec executable="${python.bin}" dir="${python.home}" output="${python.home}/temp/distribute_setup.log" >
+			<arg file="${python.home}/temp/distribute_setup.py"/>
+		</exec>
+	</target>
+	<target name="configure-python-distutils" depends="set-python.home">
+		<echo level="error" file="${python.home}/Lib/distutils/distutils.cfg">[build]${eol}</echo>
+		<echo level="error" file="${python.home}/Lib/distutils/distutils.cfg" append="true">compiler = mingw32${eol}</echo>
+	</target>
+</project>

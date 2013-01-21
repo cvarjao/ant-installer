@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="python-common" basedir=".">	
+	<dirname property="ant.python-common.dir" file="${ant.file.python-common}"/>
+	
+	<target name="set-python.home">
+		<property name="python.install.dir" value="${install.dir}/python"/>
+	    <pathconvert property="python.home" targetos="windows">
+	      <path location="${python.install.dir}/python-${python.version}"/>
+	    </pathconvert>
+	    <pathconvert property="python.bin" targetos="windows">
+	      <path location="${python.home}/python.exe"/>
+	    </pathconvert>
+		<echo>python.home:'${python.home}'</echo>
+		<echo>python.bin:'${python.bin}'</echo>
+	</target>
+</project>

@@ -9,4 +9,5 @@
 	<import file="installers/ruby/gems/rmagick.xml"/>
 	<import file="installers/redmine.xml"/>
 	<import file="installers/innounp.xml"/>
+	<import file="installers/python/python.xml"/>
 </project>

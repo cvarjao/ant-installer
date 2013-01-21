@@ -1,0 +1,7 @@
+<python>
+	<packages>
+		<distribute version="trunk" ext="py">
+			<download url="http://python-distribute.org/distribute_setup.py"/>
+		</distribute>
+	</packages>
+</python>

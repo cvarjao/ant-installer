@@ -1,0 +1,5 @@
+<trac version="1.0">
+	<dist>
+		<v1.0 url="http://download.edgewall.org/trac/Trac-1.0.zip" ext="zip"/>
+	</dist>
+</trac>

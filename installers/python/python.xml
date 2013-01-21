@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="python" basedir=".">
+	<dirname property="ant.python.dir" file="${ant.file.python}"/>
+	<property name="python.properties.xml" location="${ant.python.dir}/python.properties.xml"/>
+	<xmlproperty file="${python.properties.xml}" collapseAttributes="true"/>
+	
+	<import file="../_common.xml"/>
+	<import file="_common.xml"/>
+	<import file="../mingw/mingw.xml"/>
+	
+	<target name="echo">
+		<echoproperties prefix="python."/>
+	</target>
+		
+	<target name="init-python" depends="set-python.home">
+		<property name="python.arch" value="${target.arch}"/>
+		<property name="python.download.dir" value="${download.dir}"/>
+		<dproperty property="python.ext" prefix="python.dist." version="v${python.version}" sufix=".${python.arch}.ext"/>
+		<dproperty property="python.download.url" prefix="python.dist." version="v${python.version}" sufix=".${python.arch}"/>
+		
+		<property name="python.dist.filename" value="python-${python.version}-${python.arch}.${python.ext}"/>
+		
+	    <pathconvert property="python.download.file" targetos="windows">
+	      <path location="${download.dir}/${python.dist.filename}"/>
+	    </pathconvert>
+		
+		<condition property="python.download.exists">
+			<and>
+				<available file="${python.download.dir}/${python.dist.filename}"/>
+			</and>
+		</condition>
+		
+		<condition property="python.download.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><isset property="python.download.exists"/></not>
+			</and>
+		</condition>
+		
+		<condition property="python.installed.true">
+			<available file="${python.home}"/>
+		</condition>
+		
+		<condition property="python.installed.false">
+			<not><available file="${python.home}"/></not>
+		</condition>
+				
+		<echoproperties prefix="python."/>
+	</target>
+		
+	<target name="check-download-python" depends="init-python" unless="offline">
+		
+	</target>
+	
+	<target name="download-python" depends="check-download-python" if="python.download.ok">
+        <mkdir dir="${python.download.dir}"/>
+        <get src="${python.download.url}" dest="${python.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="check-install-python">
+	</target>
+	
+	<target name="install-python" depends="download-python,check-install-python" unless="python.installed.true">
+		<mkdir dir="${python.install.dir}"/>
+		<echo>msiexec /a ${python.download.file} /qb TARGETDIR=${python.home}</echo>
+		<exec executable="msiexec" dir="${python.install.dir}" output="${python.install.dir}/python-${python.version}.log" >
+			<arg value="/a"/>
+			<arg value="${python.download.file}"/>
+		    <arg value="/qb"/>
+			<arg value="TARGETDIR=${python.home}"/>
+		</exec>
+	</target>
+</project>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="python.pkg.mysql-python" basedir=".">
+	<dirname property="ant.python.pkg.mysql-python.dir" file="${ant.file.python.pkg.mysql-python}"/>
+	<property name="python.pkg.mysql-python.properties.xml" location="${ant.python.pkg.mysql-python.dir}/mysql-python.properties.xml"/>
+	<xmlproperty file="${python.pkg.mysql-python.properties.xml}" collapseAttributes="true"/>
+	
+	<import file="../python.xml"/>
+	<import file="../../7zip.xml"/>
+	
+	<target name="echo-mysql-python" depends="set-python.home">
+		
+	</target>
+	
+	<target name="init-python-pkg-mysql-python" depends="set-python.home,set-mingw.home">
+		<dproperty property="python.packages.mysql-python.download.url" prefix="python.v${python.version.major}.${python.version.minor}.mysql-python.dist." version="v${python.packages.mysql-python.version}" sufix=".${python.arch}"/>
+		<dproperty property="python.packages.mysql-python.ext" prefix="python.v${python.version.major}.${python.version.minor}.mysql-python.dist." version="v${python.packages.mysql-python.version}" sufix=".${python.arch}.ext"/>
+		
+		<property name="python.packages.mysql-python.download.dir" value="${download.dir}"/>
+		<property name="python.packages.mysql-python.download.filename" value="mysql-python-${python.packages.mysql-python.version}.win-py.${python.version.major}.${python.version.minor}.${python.arch}.${python.packages.mysql-python.ext}"/>
+		<property name="python.packages.mysql-python.download.file" value="${python.packages.mysql-python.download.dir}/${python.packages.mysql-python.download.filename}"/>
+		
+		<condition property="python.packages.mysql-python.download.exists">
+			<and>
+				<available file="${python.packages.mysql-python.download.file}"/>
+			</and>
+		</condition>
+		
+		<condition property="python.packages.mysql-python.download.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><isset property="python.packages.mysql-python.download.exists"/></not>
+			</and>
+		</condition>
+		
+	    <pathconvert property="mysql-connector-c.home" targetos="windows">
+	      <path location="${install.dir}/mysql-connector-c/6.0.2-${python.arch}"/>
+	    </pathconvert>
+			
+		<echo>mysql-connector-c.home:'${mysql-connector-c.home}'</echo>
+		<!--<echoproperties prefix="python."/>-->
+	</target>
+	
+	<target name="download-python-pkg-mysql-python" depends="init-python-pkg-mysql-python" if="python.packages.mysql-python.download.ok">
+        <mkdir dir="${python.packages.mysql-python.download.dir}"/>
+        <get src="${python.packages.mysql-python.download.url}" dest="${python.packages.mysql-python.download.file}" usetimestamp="true"/>
+	</target>
+    
+	<target name="_download-mysql-python_source">
+		<mkdir dir="${python.home}/projects"/>
+		
+		<exec executable="${python.home}/Scripts/easy_install.exe" dir="${python.home}/projects" output="${python.home}/temp/mysql-python_setup.log" >
+			<arg value="-q"/>
+			<arg value="--editable"/>
+			<arg value="--build-directory"/>
+			<arg value="."/>
+			<arg value="MySQL-python"/>
+		</exec>
+		<copy file="${python.home}/projects/mysql-python/site.cfg" tofile="${python.home}/projects/mysql-python/site.cfg.original"/>
+	</target>
+	
+	<target name="install-python-pkg-mysql-python" depends="install-7zip,download-python-pkg-mysql-python">
+		<mkdir dir="${python.home}/temp"/>
+		
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg">[options]${eol}</echo>
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg" append="true">embedded = False${eol}</echo>
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg" append="true">threadsafe = True${eol}</echo>
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg" append="true">static = False${eol}</echo>
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg" append="true">#mysql_config = ${mysql-connector-c.home}\bin\mysql_config${eol}</echo>
+		<echo level="error" file="${python.home}/projects/mysql-python/site.cfg" append="true">connector = ${mysql-connector-c.home}${eol}</echo>
+		
+				
+		<exec executable="${python.home}/python.exe" dir="${python.home}/projects/mysql-python" output="${python.home}/temp/mysql-python-${python.packages.mysql-python.version}-compile.log" >
+			<env key="PATH" path="${mingw.home}/bin;${env.PATH}" />
+		    <arg value="setup.py"/>
+			<arg value="build"/>
+		</exec>
+	</target>
+</project>

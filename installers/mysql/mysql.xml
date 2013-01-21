@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="mysql" basedir=".">
+	<dirname property="ant.mysql.dir" file="${ant.file.mysql}"/>
+	<property name="mysql.properties.xml" location="${ant.mysql.dir}/mysql.properties.xml"/>
+	<xmlproperty file="${mysql.properties.xml}" collapseAttributes="true"/>
+	
+	<target name="check-download-mysql" unless="offline">
+		<property name="mysql.archive.filename" value="mysql-${mysql.version}.exe"/>
+		<property name="mysql.download.file" value="${download.dir}/${mysql.archive.filename}"/>
+		<condition property="download.mysql.ok">
+			<and>
+				<not><isset property="offline"/></not>
+				<not><available file="${download.dir}/${mysql.archive.filename}"/></not>
+			</and>
+		</condition>
+	</target>
+	
+	<target name="download-mysql" depends="check-download-mysql" if="download.mysql.ok">
+        <mkdir dir="${download.dir}"/>
+        <get src="${mysql.archive.url}" dest="${mysql.download.file}" usetimestamp="true"/>
+	</target>
+	
+	<target name="set-mysql.home">
+		<property name="mysql.install.dir" value="${install.dir}/mysql"/>
+		<property name="mysql.home" value="${mysql.install.dir}/mysql-${mysql.version}"/>
+		<property name="mysql.bin" value="${mysql.home}/bin/mysql.exe"/>
+		
+		<condition property="mysql.installed">
+			<available file="${mysql.home}"/>
+		</condition>
+	</target>
+	<target name="check-install-mysql" depends="set-mysql.home">	
+	</target>
+	
+	<target name="install-mysql" depends="download-mysql,check-install-mysql" unless="mysql.installed">
+		<mkdir dir="${mysql.install.dir}"/>
+		<exec executable="${mysql.download.file}" dir="${mysql.install.dir}" output="${mysql.install.dir}/mysql-${mysql.version}.log" >
+		    <arg value="-s"/>
+			<arg value="-d${mysql.install.dir}/mysql-${mysql.version}"/>
+		</exec>
+	</target>
+</project>
